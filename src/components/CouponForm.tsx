@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
+import { QRCodeCanvas } from 'qrcode.react';
 
 interface Coupon {
   discount: number;
@@ -7,99 +8,130 @@ interface Coupon {
 }
 
 export default function CouponForm() {
-  const [discount, setDiscount] = useState("10");
-  const [customCode, setCustomCode] = useState("");
-  const [expiration, setExpiration] = useState("");
-  const [coupon, setCoupon] = useState<Coupon | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [isClient, SetIsClient] = useState(false); // Preventative SSR 
+  const [discount, setDiscount] = useState<string>("10");
+  const [expirationDate, setExpirationDate] = useState<string>("");
+  const [customCode, setCustomCode] = useState<string>("");
+  const [couponCode, setCouponCode] = useState<string>("");
+  const [savedCoupons, setSavedCoupons] = useState<Coupon[]>([]);
+  const [copied, setCopied] = useState<boolean>(false);
+
 
   useEffect(() => {
-    SetIsClient(true);
+    const storedCoupons = localStorage.getItem("coupons");
+    if (storedCoupons) {
+      setSavedCoupons(JSON.parse(storedCoupons));
+    }
   }, []);
 
-  const generateCoupon = () => {
-    const discount = Math.floor(Math.random() * 50) + 10;  // Random discount between 10% and 60% //
-    const code = customCode || Math.random().toString(36).substring(2, 8).toUpperCase(); // Random Code
+  useEffect(() => {
+    if (savedCoupons.length > 0)  {
+      localStorage.setItem("coupons", JSON.stringify(savedCoupons));
+    }
+  }, [savedCoupons]);
 
-    const expirationDate = new Date(); 
-    expirationDate.setDate(expirationDate.getDate() + 30);
-    const formattedExpirationDate = expirationDate.toISOString().split("T")[0]; // YYYY-MM-DD for date input
-    setCoupon({ discount, code, expirationDate: formattedExpirationDate });
-    setExpiration(formattedExpirationDate); // Update input field
+  const generateCouponCode = () => {
+    const discountValue = parseInt(discount, 10);
+    if (isNaN(discountValue) || discountValue < 1 || discountValue > 100)
+      return;
+
+    const randomString = Math.random()
+      .toString(36)
+      .substring(2, 8)
+      .toUpperCase();
+    const code = customCode || `SAVE${discountValue}-${randomString}`;
+    const expiration =
+      expirationDate ||
+      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    const newCoupon: Coupon = {
+      discount: discountValue,
+      code,
+      expirationDate: expiration,
+    };
+    setCouponCode(code);
+    setSavedCoupons((prev) => [newCoupon, ...prev]);
     setCopied(false); // Reset copy status when a new coupon is generated
   };
 
   const copyToClipboard = () => {
-    if (coupon) {
-        navigator.clipboard.writeText(coupon.code);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000); // Resets after 2 seconds
+    if (couponCode) {
+      navigator.clipboard.writeText(couponCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000); // Resets after 2 seconds
     }
   };
 
-  if (!isClient) {
-    return null; // Preventative SSR Rendering  
-  }
-
   return (
-    <div className="max-w-md mx-auto bg-white p-6 rounded-lg shadow-lg mt-10 flex flex-col gap-4 sm:max-w-lg sm:p-8">
-      <h2 className="text-3xl text-gray-500 font-bold mb-4 text-center">
-        Coupon Generator
-      </h2>
-      
-      <label className="font-medium text-gray-700">Discount Percentage</label>
-      <input
-        type="number"
-        value={discount}
-        onChange={(e) => setDiscount((e.target.value))}
-        placeholder="Enter Discount %"
-        className="w-full p-2 border rounded-md"
-        aria-label="Discount Percentage"
-      />
-
-      <label className="font-medium text-gray-700">Custom Code (Optional)</label>
-      <input
-        type="text"
-        value={customCode}
-        onChange={(e) => setCustomCode(e.target.value)}
-        placeholder="Enter Custom Code"
-        className="w-full p-2 border rounded-md"
-        aria-label="Custom Code"
-      />
-      
-      <label className="font-medium text-gray-700">Expiration Date</label>
-      <input
-        type="date"
-        value={expiration}
-        onChange={(e) => setExpiration(e.target.value)}
-        className="w-full p-2 border rounded-md"
-        aria-label="Expiration Date"
-      />
-
-      <button
-        onClick={generateCoupon}
-        className="w-full bg-green-500 text-white py-3 px-5 rounded hover:bg-green-600 transition-all-300"
-      >
-        Generate Coupon
-      </button>
-
-      {coupon && (
-        <div className="mt-5 p-5 border rounded-lg bg-gray-50 flex flex-col items-center">
-          <p className="text-xl text-gray-700 font-semibold">
-            Discount: {coupon.discount}%
-          </p>
-          <p className="text-lg text-gray-900 font-semibold bg-gray-200 px-3 py-1 rounded-md mt-2">
-            {coupon.code}
-          </p>
-          <button onClick={copyToClipboard} className="mt-2 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">
-            {copied ? "Copied!" : "Copy Code"}
-          </button>
-          <p className="text-sm text-gray-500 mt-2">
-            Expires on: {coupon.expirationDate}
-          </p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-200 p-6">
+      <div className="w-full max-w-md p-6 bg-white shadow-md rouded-lg">
+        <div className="p-6">
+          <h2 className="text-4xl font-bold text-center text-gray-900 mb-6">
+            OfferEngine
+          </h2>
+          <div className="space-y-4">
+            <label htmlFor="discount"className="block text-gray-600 font-medium">Discount Percentage</label>
+            <input
+              id="discount"
+              type="number"
+              placeholder="Discount Percentage (1-100%)"
+              value={discount}
+              onChange={(e) =>
+                setDiscount(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))
+              } // Restrict to numbers, max 3 digits
+              className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 bg-white text-gray-900"
+            />
+            <label htmlFor="customCode" className="block text-gray-600 font-medium">Custom Code (Optional)</label>
+            <input
+              id="customCode"
+              type="text"
+              placeholder="Custom Code (Optional)"
+              value={customCode}
+              onChange={(e) => setCustomCode(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 bg-white text-gray-900"
+            />
+            <label htmlFor="expirationDate" className="block text-gray-600 font-medium">Expiration Date</label>
+            <input
+              id="expirationDate"
+              type="date"
+              placeholder="Expiration Date"
+              value={expirationDate}
+              onChange={(e) => setExpirationDate(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 bg-white text-gray-900"
+            />
+            <button onClick={generateCouponCode} className="w-full bg-blue-600 text font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition">
+              Generate Coupon
+            </button>
+            {couponCode && (
+              <div className="mt-4 p-4 bg-green-100 text-green-800 rounded-xl text-center">
+                <p className="text-lg font-semibold">Your Discount Code:</p>
+                <p className="text-2xl font-bold bg-white p-2 rounded-md shadow-md">{couponCode}</p>
+                <button
+                  onClick={copyToClipboard}
+                  className="mt-2 bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition"
+                >
+                  {copied ? "Copied!" : "Copy Code"}
+                </button>
+                <p className="text-sm mt-2">
+                  Expires on: {savedCoupons[0]?.expirationDate || "Default (30 days)"}
+                </p>
+                <div className="mt-4 flex justify-center">
+                  <QRCodeCanvas value={couponCode} size={150} className="border border-gray-300 shadow-md p-2 rounded-md" />
+                </div>
+              </div>
+            )}
+          </div>
+          {savedCoupons.length > 0 && (
+            <div className="mt-6">
+              <h2 className="text-lg font-bold text-gray-700">Saved Coupon</h2>
+              {savedCoupons.map((c, index) => (
+                <p key={`${c.code}-${index}`} className="text-sm text-gray-700 bg-gray-100 p-2 rounded-md shadow-sm mt-2">
+                  {c.code} - {c.discount}% off (Expires: {c.expirationDate})
+                </p>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
