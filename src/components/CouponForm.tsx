@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { QRCodeCanvas } from 'qrcode.react';
+import React, { useState, useEffect } from "react";
+import { QRCodeCanvas } from "qrcode.react";
 
 interface Coupon {
   discount: number;
@@ -14,17 +14,21 @@ export default function CouponForm() {
   const [couponCode, setCouponCode] = useState<string>("");
   const [savedCoupons, setSavedCoupons] = useState<Coupon[]>([]);
   const [copied, setCopied] = useState<boolean>(false);
-
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    const storedCoupons = localStorage.getItem("coupons");
-    if (storedCoupons) {
-      setSavedCoupons(JSON.parse(storedCoupons));
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedCoupons = localStorage.getItem("coupons");
+      setSavedCoupons(storedCoupons ? JSON.parse(storedCoupons) : []);
     }
   }, []);
 
   useEffect(() => {
-    if (savedCoupons.length > 0)  {
+    if (savedCoupons.length > 0) {
       localStorage.setItem("coupons", JSON.stringify(savedCoupons));
     }
   }, [savedCoupons]);
@@ -41,7 +45,9 @@ export default function CouponForm() {
     const code = customCode || `SAVE${discountValue}-${randomString}`;
     const expiration =
       expirationDate ||
-      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0];
 
     const newCoupon: Coupon = {
       discount: discountValue,
@@ -63,13 +69,18 @@ export default function CouponForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-200 p-6">
-      <div className="w-full max-w-md p-6 bg-white shadow-md rouded-lg">
+      <div className="w-full max-w-md p-6 bg-white shadow-md rounded-lg">
         <div className="p-6">
           <h2 className="text-4xl font-bold text-center text-gray-900 mb-6">
             OfferEngine
           </h2>
           <div className="space-y-4">
-            <label htmlFor="discount"className="block text-gray-600 font-medium">Discount Percentage</label>
+            <label
+              htmlFor="discount"
+              className="block text-gray-600 font-medium"
+            >
+              Discount Percentage
+            </label>
             <input
               id="discount"
               type="number"
@@ -80,7 +91,12 @@ export default function CouponForm() {
               } // Restrict to numbers, max 3 digits
               className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 bg-white text-gray-900"
             />
-            <label htmlFor="customCode" className="block text-gray-600 font-medium">Custom Code (Optional)</label>
+            <label
+              htmlFor="customCode"
+              className="block text-gray-600 font-medium"
+            >
+              Custom Code (Optional)
+            </label>
             <input
               id="customCode"
               type="text"
@@ -89,7 +105,12 @@ export default function CouponForm() {
               onChange={(e) => setCustomCode(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 bg-white text-gray-900"
             />
-            <label htmlFor="expirationDate" className="block text-gray-600 font-medium">Expiration Date</label>
+            <label
+              htmlFor="expirationDate"
+              className="block text-gray-600 font-medium"
+            >
+              Expiration Date
+            </label>
             <input
               id="expirationDate"
               type="date"
@@ -98,13 +119,16 @@ export default function CouponForm() {
               onChange={(e) => setExpirationDate(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 bg-white text-gray-900"
             />
-            <button onClick={generateCouponCode} className="w-full bg-blue-600 text font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition">
+            <button
+              onClick={generateCouponCode}
+              className="w-full bg-blue-600 text font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition"
+            >
               Generate Coupon
             </button>
             {couponCode && (
               <div className="mt-4 p-4 bg-green-100 text-green-800 rounded-xl text-center">
                 <p className="text-lg font-semibold">Your Discount Code:</p>
-                <p className="text-2xl font-bold bg-white p-2 rounded-md shadow-md">{couponCode}</p>
+                <p className="text-2xl font-bold bg-white p-2 rounded-md shadow-md"></p>
                 <button
                   onClick={copyToClipboard}
                   className="mt-2 bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition"
@@ -112,11 +136,20 @@ export default function CouponForm() {
                   {copied ? "Copied!" : "Copy Code"}
                 </button>
                 <p className="text-sm mt-2">
-                  Expires on: {savedCoupons[0]?.expirationDate || "Default (30 days)"}
+                  Expires on:{" "}
+                  {savedCoupons[0]?.expirationDate || "Default (30 days)"}
                 </p>
-                <div className="mt-4 flex justify-center">
-                  <QRCodeCanvas value={couponCode} size={150} className="border border-gray-300 shadow-md p-2 rounded-md" />
-                </div>
+                {isClient && couponCode && (
+                  <div className="mt-4 flex justify-center">
+                    {typeof window !== "undefined" && (
+                      <QRCodeCanvas
+                        value={couponCode}
+                        size={150}
+                        className="border border-gray-300 shadow-md p-2 rounded-md"
+                      />
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -124,7 +157,10 @@ export default function CouponForm() {
             <div className="mt-6">
               <h2 className="text-lg font-bold text-gray-700">Saved Coupon</h2>
               {savedCoupons.map((c, index) => (
-                <p key={`${c.code}-${index}`} className="text-sm text-gray-700 bg-gray-100 p-2 rounded-md shadow-sm mt-2">
+                <p
+                  key={`${c.code}-${index}`}
+                  className="text-sm text-gray-700 bg-gray-100 p-2 rounded-md shadow-sm mt-2"
+                >
                   {c.code} - {c.discount}% off (Expires: {c.expirationDate})
                 </p>
               ))}
