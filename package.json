@@ -10,11 +10,9 @@
   },
   "dependencies": {
     "next": "15.1.6",
-    "next-qrcode": "^2.5.1",
     "qrcode.react": "^4.2.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "shadcn-ui": "^0.9.4"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
