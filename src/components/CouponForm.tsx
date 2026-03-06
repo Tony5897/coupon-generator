@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { QRCodeCanvas } from "qrcode.react";
-
-interface Coupon {
-  discount: number;
-  code: string;
-  expirationDate: string;
-  createdAt: string;
-}
+import {
+  type Coupon,
+  validateDiscount,
+  validateCustomCode,
+  createCoupon,
+} from "@/lib/coupons";
 
 export default function CouponForm() {
   const [discount, setDiscount] = useState<string>("10");
@@ -41,37 +40,22 @@ export default function CouponForm() {
 
   const generateCouponCode = useCallback(() => {
     setError("");
-    const discountValue = parseInt(discount, 10);
 
-    if (isNaN(discountValue) || discountValue < 1 || discountValue > 100) {
-      setError("Enter a discount between 1 and 100.");
+    const discountError = validateDiscount(discount);
+    if (discountError) {
+      setError(discountError);
       return;
     }
 
-    if (customCode && customCode.length < 3) {
-      setError("Custom code must be at least 3 characters.");
+    const codeError = validateCustomCode(customCode);
+    if (codeError) {
+      setError(codeError);
       return;
     }
 
-    const randomString = Math.random()
-      .toString(36)
-      .substring(2, 8)
-      .toUpperCase();
-    const code = customCode.trim() || `SAVE${discountValue}-${randomString}`;
-    const expiration =
-      expirationDate ||
-      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0];
+    const newCoupon = createCoupon(discount, customCode, expirationDate);
 
-    const newCoupon: Coupon = {
-      discount: discountValue,
-      code,
-      expirationDate: expiration,
-      createdAt: new Date().toISOString(),
-    };
-
-    setCouponCode(code);
+    setCouponCode(newCoupon.code);
     setSavedCoupons((prev) => [newCoupon, ...prev]);
     setCopied(false);
     setCustomCode("");
@@ -79,10 +63,15 @@ export default function CouponForm() {
 
   const copyToClipboard = useCallback(() => {
     if (!couponCode) return;
-    navigator.clipboard.writeText(couponCode).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    navigator.clipboard
+      .writeText(couponCode)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {
+        setError("Copy failed — please select and copy the code manually.");
+      });
   }, [couponCode]);
 
   const deleteCoupon = useCallback((index: number) => {
