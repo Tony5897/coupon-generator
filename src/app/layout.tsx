@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import './globals.css';
+import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Coupon Generator",
-  description: "Generate digital coupons",
+  title: "OfferEngine — Digital Coupon Generator",
+  description:
+    "Generate professional digital discount codes with QR codes. Built with Next.js, Tailwind CSS, and TypeScript.",
 };
 
 export default function RootLayout({
