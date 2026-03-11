@@ -2,9 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Light mode (default) ─── */
 :root {
   --background: #f8fafc;
   --foreground: #171717;
+}
+
+/* ─── Dark mode ─── */
+.dark {
+  --background: #0f172a;
+  --foreground: #f1f5f9;
 }
 
 body {
