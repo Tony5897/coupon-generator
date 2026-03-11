@@ -2,6 +2,10 @@
 
 A client-side digital coupon generator built with **Next.js 15**, **TypeScript**, and **Tailwind CSS**. Generate discount codes with configurable percentages, custom codes, expiration dates, and scannable QR codes — all from the browser with zero backend required.
 
+## Live Demo
+
+[Open the app](https://coupon-generator-liard.vercel.app/)
+
 ## Features
 
 - **Instant code generation** — Auto-generates unique alphanumeric coupon codes (e.g. `SAVE25-A8F3KL`) or accepts custom codes
@@ -15,20 +19,29 @@ A client-side digital coupon generator built with **Next.js 15**, **TypeScript**
 
 ## Tech Stack
 
-| Layer     | Technology                  |
-|-----------|-----------------------------|
-| Framework | Next.js 15 (App Router)     |
-| Language  | TypeScript 5                |
-| Styling   | Tailwind CSS 3.4            |
-| QR Codes  | qrcode.react 4              |
-| Testing   | Vitest                      |
-| Fonts     | Geist Sans / Geist Mono     |
-| Bundler   | Turbopack (dev)             |
-| CI        | GitHub Actions              |
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 15 (App Router) |
+| Language | TypeScript 5 |
+| Styling | Tailwind CSS 3.4 |
+| QR Codes | `qrcode.react` 4 |
+| Testing | Vitest |
+| Fonts | Geist Sans / Geist Mono |
+| Bundler | Turbopack (development) |
+| CI | GitHub Actions |
+| Deployment | Vercel |
+
+## Quality
+
+- ESLint for linting
+- TypeScript type-checking
+- Vitest unit tests
+- GitHub Actions CI pipeline for lint, type-check, test, and build
+- Production deployment on Vercel
 
 ## Project Structure
 
-```
+```text
 src/
 ├── app/
 │   ├── globals.css           # Tailwind directives and CSS variables
@@ -38,49 +51,5 @@ src/
 │   └── CouponForm.tsx        # UI component — form, QR display, saved list
 └── lib/
     ├── coupons.ts            # Business logic — validation, generation, types
-    └── coupons.test.ts       # Unit tests for all coupon utilities
+    └── coupons.test.ts       # Unit tests for coupon utilities
 ```
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- npm 9+
-
-### Install and Run
-
-```bash
-npm install
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-### Production Build
-
-```bash
-npm run build
-npm start
-```
-
-## Scripts
-
-| Command            | Description                          |
-|--------------------|--------------------------------------|
-| `npm run dev`      | Start dev server with Turbopack      |
-| `npm run build`    | Create optimized production build    |
-| `npm start`        | Serve production build               |
-| `npm run lint`     | Run ESLint                           |
-| `npm test`         | Run unit tests (Vitest)              |
-| `npm run test:watch` | Run tests in watch mode            |
-
-## Deployment
-
-This project is optimized for deployment on [Vercel](https://vercel.com). Push to a connected repository and Vercel handles the rest — no configuration needed.
-
-For other platforms, run `npm run build` and serve the `.next` output directory with `npm start`.
-
-## License
-
-Private project. All rights reserved.
