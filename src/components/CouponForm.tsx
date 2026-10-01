@@ -5,6 +5,9 @@ import {
   validateDiscount,
   validateCustomCode,
   createCoupon,
+  localDate,
+  validateExpiration,
+  parseSavedCoupons,
 } from "@/lib/coupons";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -13,31 +16,37 @@ export default function CouponForm() {
   const [expirationDate, setExpirationDate] = useState<string>("");
   const [customCode, setCustomCode] = useState<string>("");
   const [couponCode, setCouponCode] = useState<string>("");
+  const [generatedExpiration, setGeneratedExpiration] = useState("");
   const [savedCoupons, setSavedCoupons] = useState<Coupon[]>([]);
   const [copied, setCopied] = useState<boolean>(false);
   const [isClient, setIsClient] = useState(false);
   const [error, setError] = useState<string>("");
+  const [storageWarning, setStorageWarning] = useState("");
+  const [storageReady, setStorageReady] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-    const storedCoupons = localStorage.getItem("coupons");
-    if (storedCoupons) {
-      try {
-        setSavedCoupons(JSON.parse(storedCoupons));
-      } catch {
-        localStorage.removeItem("coupons");
-      }
+    try {
+      setSavedCoupons(parseSavedCoupons(localStorage.getItem("coupons")));
+      setStorageReady(true);
+    } catch {
+      setStorageWarning("Saved coupons could not be loaded. New coupons are available for this session only.");
     }
   }, []);
 
   useEffect(() => {
-    if (!isClient) return;
-    if (savedCoupons.length > 0) {
-      localStorage.setItem("coupons", JSON.stringify(savedCoupons));
-    } else {
-      localStorage.removeItem("coupons");
+    if (!storageReady) return;
+    try {
+      if (savedCoupons.length > 0) {
+        localStorage.setItem("coupons", JSON.stringify(savedCoupons));
+      } else {
+        localStorage.removeItem("coupons");
+      }
+    } catch {
+      setStorageReady(false);
+      setStorageWarning("Changes could not be saved on this device. Keep a copy before leaving this page.");
     }
-  }, [savedCoupons, isClient]);
+  }, [savedCoupons, storageReady]);
 
   const generateCouponCode = useCallback(() => {
     setError("");
@@ -54,25 +63,29 @@ export default function CouponForm() {
       return;
     }
 
+    const expirationError = validateExpiration(expirationDate);
+    if (expirationError) {
+      setError(expirationError);
+      return;
+    }
     const newCoupon = createCoupon(discount, customCode, expirationDate);
 
     setCouponCode(newCoupon.code);
+    setGeneratedExpiration(newCoupon.expirationDate);
     setSavedCoupons((prev) => [newCoupon, ...prev]);
     setCopied(false);
     setCustomCode("");
   }, [discount, customCode, expirationDate]);
 
-  const copyToClipboard = useCallback(() => {
+  const copyToClipboard = useCallback(async () => {
     if (!couponCode) return;
-    navigator.clipboard
-      .writeText(couponCode)
-      .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      })
-      .catch(() => {
-        setError("Copy failed — please select and copy the code manually.");
-      });
+    try {
+      await navigator.clipboard.writeText(couponCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setError("Copy failed — please select and copy the code manually.");
+    }
   }, [couponCode]);
 
   const deleteCoupon = useCallback((index: number) => {
@@ -84,7 +97,7 @@ export default function CouponForm() {
     setCouponCode("");
   }, []);
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = localDate();
 
   return (
     <div className="w-full max-w-lg mx-auto">
@@ -175,8 +188,9 @@ export default function CouponForm() {
             />
           </div>
 
+          {storageWarning && <p role="status" className="text-sm text-amber-800 dark:text-amber-200">{storageWarning}</p>}
           {error && (
-            <p className="text-red-600 dark:text-red-400 text-sm font-medium bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">
+            <p role="alert" className="text-red-600 dark:text-red-400 text-sm font-medium bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">
               {error}
             </p>
           )}
@@ -211,7 +225,7 @@ export default function CouponForm() {
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
                 Expires:{" "}
-                {savedCoupons[0]?.expirationDate || "30 days from now"}
+                {generatedExpiration}
               </p>
               {isClient && (
                 <div className="mt-4 flex justify-center">

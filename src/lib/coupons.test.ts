@@ -102,12 +102,13 @@ describe("defaultExpiration", () => {
     expect(defaultExpiration()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
-  it("returns a date approximately 30 days in the future", () => {
-    const result = new Date(defaultExpiration()).getTime();
-    const now = Date.now();
-    const diffDays = (result - now) / (1000 * 60 * 60 * 24);
-    expect(diffDays).toBeGreaterThanOrEqual(29);
-    expect(diffDays).toBeLessThanOrEqual(31);
+  it("returns the local calendar date 30 days ahead", () => {
+    const expected = new Date();
+    expected.setDate(expected.getDate() + 30);
+    const result = new Date(`${defaultExpiration()}T12:00:00`);
+    expect(result.getFullYear()).toBe(expected.getFullYear());
+    expect(result.getMonth()).toBe(expected.getMonth());
+    expect(result.getDate()).toBe(expected.getDate());
   });
 });
 
